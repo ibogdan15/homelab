@@ -1,0 +1,48 @@
+version: "3.9"
+
+services:
+
+# PORTAINER
+  portainer:
+    image: portainer/portainer-ce
+    container_name: portainer
+    ports:
+      - "9000:9000"
+      - "8000:8000"
+    volumes:
+      - ~/data/portainer:/data
+      - /var/run/docker.sock:/var/run/docker.sock
+    restart: always
+    networks:
+      - web
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+      - traefik.enable=true
+      # Basic
+      - traefik.http.routers.portainer_basic.entrypoints=web
+      - traefik.http.routers.portainer_basic.rule=Host(`${PORTAINER_HOST}`)
+      - traefik.http.middlewares.portainer-https-redirect.redirectscheme.scheme=https
+      - traefik.http.routers.portainer_basic.middlewares=portainer-https-redirect
+      - traefik.http.services.portainer_basic.loadbalancer.server.port=9000
+      # Secure
+      - traefik.http.routers.portainer.rule=Host(`${PORTAINER_HOST}`)
+      - traefik.http.routers.portainer.tls=true
+      - traefik.http.routers.portainer.tls.certresolver=lets-encrypt
+      - traefik.http.routers.portainer.entrypoints=websecure
+      # - traefik.http.services.portainer.loadbalancer.server.scheme=https
+      
+      - traefik.docker.network=web
+  
+# WATCHTOWER
+  watchtower:
+    image: 'containrrr/watchtower:latest'
+    container_name: watchtower
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: --label-enable
+
+networks:
+  web:
+    external: true
+  

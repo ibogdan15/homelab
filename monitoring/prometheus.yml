@@ -1,0 +1,59 @@
+scrape_configs:
+  - job_name: prometheus
+    scrape_interval: 1m 
+    static_configs:
+      - targets: ['localhost:9090']
+
+  - job_name: cadvisor
+    scrape_interval: 1m 
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['cadvisor:8080']
+        labels:
+          group: 'cadvisor'
+  
+  - job_name: node_exporter
+    scrape_interval: 1m
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['node_exporter:9100', 'raspi2:9100', 'zeronowifi:9100', '192.168.7.1:9100']
+        labels:
+          group: 'node_exporter'
+  
+  - job_name: win_exporter
+    scrape_interval: 1m
+    metrics_path: '/metrics'
+    static_configs:
+        - targets: ['myxps:9182']
+          labels:
+            group: 'win_exporter'
+  
+  - job_name: mysql_exporter
+    scrape_interval: 1m 
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['mysql_exporter:9104']
+        labels:
+          group: 'mysql_exporter'
+
+  - job_name: influxdb
+    scrape_interval: 1m 
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['influxdb:8086']
+        labels:
+          group: 'influxdb'
+  
+  - job_name: unifi_poller
+    scrape_interval: 1m 
+    static_configs:
+      - targets: ['unifi_poller:9130']
+        labels:
+          group: 'unifi_poller'
+
+  - job_name: 'ohmgraphite'
+    scrape_interval: 5s
+    tls_config:
+      insecure_skip_verify: true
+    static_configs:
+    - targets: ['192.168.3.20:4445']

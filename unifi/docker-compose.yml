@@ -1,0 +1,31 @@
+version: "3.9"
+
+services:
+  unifi:
+    image: jacobalberty/unifi:latest
+    container_name: unifi
+    ports:
+      - 8080:8080
+      - 8081:8081
+      - 8443:8443
+      - 8880:8880
+      - 8883:8883
+      - "3478:3478/udp"
+    restart: unless-stopped
+    volumes:
+      - ~/data/unifi:/unifi
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+      - traefik.enable=true
+      - traefik.http.routers.unifi.rule=Host(`wifi.${DOMAIN}`)
+      - traefik.http.routers.unifi.tls=true
+      - traefik.http.routers.unifi.tls.certresolver=lets-encrypt
+      - traefik.http.routers.unifi.entrypoints=websecure
+      - traefik.http.services.unifi.loadbalancer.server.scheme=https
+      - traefik.http.services.unifi.loadbalancer.server.port=8443
+    networks:
+      - web
+
+networks:
+  web:
+    external: true

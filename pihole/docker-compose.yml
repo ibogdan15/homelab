@@ -1,0 +1,63 @@
+version: "3"
+
+services:
+  pihole:
+    container_name: pihole
+    image: pihole/pihole:latest
+    ports:
+      - "53:53/tcp"
+      - "53:53/udp"
+      - "67:67/udp"
+      - "8088:80/tcp"
+      - "8843:443/tcp"
+    dns:
+      - 127.0.0.1
+      - 1.1.1.1  
+    environment:
+      TZ: 'Europe/Berlin'
+      
+    # Volumes store your data between container upgrades
+    volumes:
+      - '~/data/pihole/etc-pihole/:/etc/pihole/'
+      - '~/data/pihole/etc-dnsmasq.d/:/etc/dnsmasq.d/'
+    # Recommended but not required (DHCP needs NET_ADMIN)
+    #   https://github.com/pi-hole/docker-pi-hole#note-on-capabilities
+    cap_add:
+      - NET_ADMIN
+    restart: unless-stopped
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+    #   - traefik.enable=true
+      
+    #   # web interface
+    #   - "traefik.http.routers.pihole.rule=Host(`${PIHOLE_HOST}`)"
+    #   - "traefik.http.routers.pihole.entrypoints=websecure"
+    #   - "traefik.http.routers.pihole.tls.certresolver=lets-encrypt"
+    #   - "traefik.http.services.pihole.loadbalancer.server.port=80"
+
+    #   # DNS-over-TLS
+    #   - "traefik.tcp.routers.dnsovertls.rule=HostSNI(`${PIHOLE_HOST}`)"
+    #   - "traefik.tcp.routers.dnsovertls.entrypoints=dnsovertls"
+    #   - "traefik.tcp.routers.dnsovertls.tls.certresolver=lets-encrypt"
+    #   - "traefik.tcp.routers.dnsovertls.service=pihole"
+
+    #   # Normal DNS coming in on 53 TCP, no TLS
+    #   - "traefik.tcp.routers.dns.rule=HostSNI(`${PIHOLE_HOST}`)"
+    #   - "traefik.tcp.routers.dns.entrypoints=dns"
+    #   - "traefik.tcp.routers.dns.service=pihole"
+
+    #   # recieves traffic from both the TLS and non-TLS traefik routers
+    #   - "traefik.tcp.services.pihole.loadbalancer.server.port=53"
+
+    #   # Normal DNS coming in on 53 UDP
+    #   - "traefik.udp.routers.udpdns.entrypoints=udpdns"
+    #   - "traefik.udp.routers.udpdns.service=pihole"
+    #   - "traefik.udp.services.pihole.loadbalancer.server.port=53"
+      
+    #   - traefik.docker.network=web
+    # networks:
+    #   - web
+ 
+# networks:
+#   web:
+#     external: true

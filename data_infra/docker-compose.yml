@@ -1,0 +1,143 @@
+version: "3"
+ 
+networks:
+  data_infra:
+    external: true
+
+services:
+# RABBITMQ
+  rabbitmq:
+    image: "rabbitmq:3.8.5-management"
+    container_name: rabbitmq
+    environment:
+      - RABBITMQ_ERLANG_COOKIE=${RABBITMQ_ERLANG_COOKIE}
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
+      - RABBITMQ_DEFAULT_VHOST=${RABBITMQ_DEFAULT_VHOST}
+    ports:
+      - 15672:15672
+      - 5672:5672
+      - 1883:1883
+    volumes:
+      - "./enabled_plugins:/etc/rabbitmq/enabled_plugins"
+    restart: unless-stopped
+    networks:
+      - data_infra
+
+# INFLUXDB
+  influxdb:
+    image: influxdb
+    container_name: influxdb
+    environment:
+      - DOCKER_INFLUXDB_INIT_USERNAME=${DOCKER_INFLUXDB_INIT_USERNAME}
+      - DOCKER_INFLUXDB_INIT_PASSWORD=${DOCKER_INFLUXDB_INIT_PASSWORD}
+      - DOCKER_INFLUXDB_INIT_ORG=${DOCKER_INFLUXDB_INIT_ORG}
+      - DOCKER_INFLUXDB_INIT_BUCKET=${DOCKER_INFLUXDB_INIT_BUCKET}
+      - DOCKER_INFLUXDB_INIT_MODE=${DOCKER_INFLUXDB_INIT_MODE}
+    volumes:
+    # copy the local influxdb.conf to data/config/influxdb.conf?
+      - ~/data/influxdb2/data:/var/lib/influxdb2
+      - ~/data/influxdb2/config/:/etc/influxdb2/
+      - ~/data/influxdb2/backups:/backups
+    ports:
+      - "8086:8086"
+      - "8082:8082"
+      - "8089:8089/udp"
+    restart: unless-stopped
+    networks:
+      - data_infra
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "10"
+
+# TELEGRAF
+  telegraf:
+    image: telegraf
+    container_name: telegraf
+    environment:
+      HOSTNAME: "telegraf-WTF"
+      INFLUX_TOKEN: ${INFLUX_TOKEN}
+    links:
+      - influxdb
+    volumes:
+      - ./telegraf.conf:/etc/telegraf/telegraf.conf:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      - rabbitmq
+      - influxdb
+    restart: unless-stopped
+    networks:
+      - data_infra
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "10"
+  
+
+# # KAPACITOR
+#   kapacitor:
+#     image: kapacitor
+#     container_name: kapacitor
+#     volumes:
+#       - ~/data/kapacitor/data/:/var/lib/kapacitor
+#       - ~/data/kapacitor/config/:/etc/kapacitor/
+#     links:
+#       - influxdb
+#     ports:
+#       - "9092:9092"
+#     restart: unless-stopped
+#     networks:
+#       - data_infra
+  
+# # CHRONOGRAF
+#   chronograf:
+#     image: chronograf
+#     container_name: chronograf
+#     environment:
+#       RESOURCES_PATH: "/usr/share/chronograf/resources"
+#     volumes:
+#       - ~/data/chronograf/data/:/var/lib/chronograf/
+#     links:
+#       - influxdb
+#       - kapacitor
+#     ports:
+#       - "8888:8888"
+#     depends_on:
+#       - kapacitor
+#       - influxdb
+#       - telegraf
+#     restart: unless-stopped
+#     networks:
+#       - data_infra
+
+# Unifi exporter for InfluxDB
+  unifi-poller:
+    restart: always
+    image: golift/unifi-poller:latest
+    container_name: unifi_poller
+    depends_on:
+      # - kapacitor
+      - influxdb
+      - telegraf
+    links:
+      - influxdb
+    environment:
+      # - UP_INFLUXDB_USER=${DOCKER_INFLUXDB_INIT_USERNAME}
+      # - UP_INFLUXDB_PASS=${INFLUX_TOKEN}
+      # - UP_INFLUXDB_URL=http://influxdb:8086
+      - UP_UNIFI_DEFAULT_USER=${UNIFI_USER}
+      - UP_UNIFI_DEFAULT_PASS=${UNIFI_PASS}
+      - UP_UNIFI_DEFAULT_URL=${UNIFI_URL}
+      - UP_POLLER_DEBUG=${POLLER_DEBUG}
+      - UP_UNIFI_DEFAULT_SAVE_DPI=${POLLER_SAVE_DPI}
+    networks:
+      - data_infra
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "10"
+  
