@@ -24,6 +24,8 @@ services:
       - "--providers.docker.watch=true"
       - "--providers.docker.network=web"
       - "--providers.docker.exposedbydefault=false"
+      - "--providers.file.filename=/config.yaml"
+      - "--providers.file.watch=true"
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.api.rule=Host(`traefik.${DOMAIN}`)"
@@ -32,7 +34,7 @@ services:
       - "traefik.http.routers.api.tls.certresolver=lets-encrypt"
       - "traefik.http.routers.api.service=api@internal"
       - "traefik.http.routers.api.middlewares=frontend-auth"
-      - "traefik.http.middlewares.frontend-auth.basicauth.users=${LOGIN_TOKEN}"
+      - "traefik.http.middlewares.frontend-auth.basicauth.usersfile=/.htpasswd"
     security_opt:
       - no-new-privileges:true
     networks:
@@ -44,6 +46,8 @@ services:
       - /etc/localtime:/etc/localtime:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ~/data/letsencrypt:/letsencrypt
+      - .htpasswd:/.htpasswd
+      - ${PWD}/traefik_dynamic.yaml:/config.yaml
     logging:
       driver: "json-file"
       options:

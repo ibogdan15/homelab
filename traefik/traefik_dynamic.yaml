@@ -1,0 +1,38 @@
+http:
+  routers:
+    haos:
+      entryPoints:
+        - websecure
+      rule: "Host(`haos.ibogdan.dev`)"
+      # middlewares:
+      #   - default-headers
+        # - addprefix-haos
+      tls:
+        certResolver: lets-encrypt
+      service: haos
+
+  services:
+    haos:
+      loadBalancer:
+        servers:
+          - url: http://192.168.3.11:8123
+        # passHostHeader: true
+
+  # middlewares:
+  #   addprefix-haos:
+  #     addPrefix:
+  #       prefix: "/admin"
+
+    # https-redirect:
+    #   redirectScheme:
+    #     scheme: https
+
+    # default-headers:
+    #   headers:
+    #     frameDeny: true
+    #     sslRedirect: true
+    #     browserXssFilter: true
+    #     contentTypeNosniff: true
+    #     forceSTSHeader: true
+    #     stsIncludeSubdomains: true
+    #     stsPreload: true
